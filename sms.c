@@ -210,8 +210,8 @@ int ril_request_send_sms(void *data, size_t size, RIL_Token token)
 	if (rc < 0)
 		return RIL_REQUEST_UNHANDLED;
 
-	request = ril_request_find_token(token);
-	if (request == NULL)
+	request = ril_request_find_request_status(RIL_REQUEST_SEND_SMS, RIL_REQUEST_HANDLED);
+	if (request != NULL)
 		return RIL_REQUEST_UNHANDLED;
 
 	values = (char **) data;
@@ -244,11 +244,11 @@ int ril_request_send_sms(void *data, size_t size, RIL_Token token)
 		if (rc < 0)
 			goto error;
 	} else {
-		ril_request_data_set_uniq(request->request, pdu, pdu_size);
+		ril_request_data_set_uniq(RIL_REQUEST_SEND_SMS, pdu, pdu_size);
 
 		rc = ipc_fmt_send(ipc_fmt_request_seq(token), IPC_SMS_SVC_CENTER_ADDR, IPC_TYPE_GET, NULL, 0);
 		if (rc < 0) {
-			ril_request_data_free(request->request);
+			ril_request_data_free(RIL_REQUEST_SEND_SMS);
 			goto error;
 		}
 	}
@@ -574,7 +574,6 @@ complete:
 int ipc_sms_svc_center_addr(struct ipc_message *message)
 {
 	struct ipc_sms_svc_center_addr_header *header;
-	struct ril_request *request = NULL;
 	void *smsc = NULL;
 	size_t smsc_size = 0;
 	void *pdu = NULL;
@@ -591,15 +590,11 @@ int ipc_sms_svc_center_addr(struct ipc_message *message)
 	if (header->length == 0 || header->length > (message->size - sizeof(struct ipc_sms_svc_center_addr_header)))
 		goto error;
 
-	request = ril_request_find_token(ipc_fmt_request_token(message->aseq));
-	if (request == NULL)
-		goto error;
-
-	pdu_size = ril_request_data_size_get(request->request);
+	pdu_size = ril_request_data_size_get(RIL_REQUEST_SEND_SMS);
 	if (pdu_size == 0)
 		goto error;
 
-	pdu = ril_request_data_get(request->request);
+	pdu = ril_request_data_get(RIL_REQUEST_SEND_SMS);
 	if (pdu == NULL)
 		goto error;
 
