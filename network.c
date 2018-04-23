@@ -645,7 +645,7 @@ int ipc_net_serving_network(struct ipc_message *message)
 	unsigned int i;
 	int rc;
 
-	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_net_regist_response_data))
+	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_net_serving_network_data))
 		return -1;
 
 	rc = ril_radio_state_check(RADIO_STATE_SIM_NOT_READY);
