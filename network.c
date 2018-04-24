@@ -732,6 +732,8 @@ int ril_request_operator(void *data, size_t size, RIL_Token token)
 int ipc_net_plmn_list(struct ipc_message *message)
 {
 	struct ipc_net_plmn_list_entry *entry;
+	struct ril_request *request;
+	RIL_Token token;
 	char **networks = NULL;
 	size_t networks_size;
 	unsigned int networks_count = 0;
@@ -748,12 +750,20 @@ int ipc_net_plmn_list(struct ipc_message *message)
 	if (rc < 0)
 		return 0;
 
-	if (message->type != IPC_TYPE_RESP || !ipc_seq_valid(message->aseq))
-		return 0;
+	if (message->type != IPC_TYPE_RESP || !ipc_seq_valid(message->aseq)) {
+		// Some devices don't properly set the aseq here
+		request = ril_request_find_request_status(RIL_REQUEST_QUERY_AVAILABLE_NETWORKS, RIL_REQUEST_HANDLED);
+		if (request == NULL || request->token == NULL)
+			return 0;
+		else
+			token = request->token;
+	} else {
+		token = ipc_fmt_request_token(message->aseq);
+	}
 
 	count = ipc_net_plmn_list_count_extract(message->data, message->size);
 	if (count == 0) {
-		ril_request_complete(ipc_fmt_request_token(message->aseq), RIL_E_SUCCESS, NULL, 0);
+		ril_request_complete(token, RIL_E_SUCCESS, NULL, 0);
 		return 0;
 	}
 
@@ -793,12 +803,12 @@ int ipc_net_plmn_list(struct ipc_message *message)
 
 	networks_size = networks_count * 4 * sizeof(char *);
 
-	ril_request_complete(ipc_fmt_request_token(message->aseq), RIL_E_SUCCESS, (void *) networks, networks_size);
+	ril_request_complete(token, RIL_E_SUCCESS, (void *) networks, networks_size);
 
 	goto complete;
 
 error:
-	ril_request_complete(ipc_fmt_request_token(message->aseq), RIL_E_GENERIC_FAILURE, NULL, 0);
+	ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
 
 complete:
 	if (networks != NULL && networks_size > 0) {
