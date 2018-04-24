@@ -43,12 +43,22 @@ int ipc_pwr_phone_reset(struct ipc_message *message)
 int ipc_pwr_phone_state(struct ipc_message *message)
 {
 	struct ipc_pwr_phone_state_response_data *data;
+	struct ril_request *request;
+	RIL_Token token;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_pwr_phone_state_response_data))
 		return -1;
 
-	if (!ipc_seq_valid(message->aseq))
-		return 0;
+	if (!ipc_seq_valid(message->aseq)) {
+		// Some devices don't properly set the aseq here
+		request = ril_request_find_request_status(RIL_REQUEST_RADIO_POWER, RIL_REQUEST_HANDLED);
+		if (request == NULL || request->token == NULL)
+			return 0;
+		else
+			token = request->token;
+	} else {
+		token = ipc_fmt_request_token(message->aseq);
+	}
 
 	data = (struct ipc_pwr_phone_state_response_data *) message->data;
 
@@ -56,13 +66,13 @@ int ipc_pwr_phone_state(struct ipc_message *message)
 		case IPC_PWR_PHONE_STATE_RESPONSE_LPM:
 			RIL_LOGD("Power state is low power mode");
 
-			ril_request_complete(ipc_fmt_request_token(message->aseq), RIL_E_SUCCESS, NULL, 0);
+			ril_request_complete(token, RIL_E_SUCCESS, NULL, 0);
 			ril_radio_state_update(RADIO_STATE_OFF);
 			break;
 		case IPC_PWR_PHONE_STATE_RESPONSE_NORMAL:
 			RIL_LOGD("Power state is normal");
 
-			ril_request_complete(ipc_fmt_request_token(message->aseq), RIL_E_SUCCESS, NULL, 0);
+			ril_request_complete(token, RIL_E_SUCCESS, NULL, 0);
 			ril_radio_state_update(RADIO_STATE_SIM_NOT_READY);
 			break;
 	}
