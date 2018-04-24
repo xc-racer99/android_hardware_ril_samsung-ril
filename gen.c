@@ -226,6 +226,7 @@ int ipc_gen_phone_res(struct ipc_message *message)
 	struct ipc_gen_phone_res_expect *expect;
 	struct ipc_gen_phone_res_data *data;
 	struct ril_client *client;
+	RIL_Token token;
 	RIL_Errno error;
 	int rc;
 
@@ -240,8 +241,20 @@ int ipc_gen_phone_res(struct ipc_message *message)
 
 	expect = ipc_gen_phone_res_expect_find_aseq(client, message->aseq);
 	if (expect == NULL) {
-		RIL_LOGD("Ignoring generic response for command %s", ipc_command_string(IPC_COMMAND(data->group, data->index)));
-		return 0;
+		if (message->type == IPC_TYPE_RESP) {
+			token = ipc_fmt_request_token(message->aseq);
+			if (token != NULL) {
+				RIL_LOGD("Received generic response for command %s, sending GENERIC_FAILURE", ipc_command_string(IPC_COMMAND(data->group, data->index)));
+				ril_request_complete(token, RIL_E_GENERIC_FAILURE, NULL, 0);
+				return 0;
+			} else {
+				RIL_LOGE("Expected to find request for generic response to command %s but unable to, igorning", ipc_command_string(IPC_COMMAND(data->group, data->index)));
+				return 0;
+			}
+		} else {
+			RIL_LOGD("Ignoring generic response for command %s", ipc_command_string(IPC_COMMAND(data->group, data->index)));
+			return 0;
+		}
 	}
 
 	if (IPC_COMMAND(data->group, data->index) != expect->command) {
