@@ -297,7 +297,7 @@ int ipc_call_list(struct ipc_message *message)
 		calls[index]->isMpty = entry->mpty;
 		calls[index]->isMT = entry->term == IPC_CALL_TERM_MT;
 		calls[index]->als = 0;
-		calls[index]->isVoice = entry->type == IPC_CALL_TYPE_VOICE;
+		calls[index]->isVoice = entry->type == IPC_CALL_TYPE_VOICE || entry->type == IPC_CALL_TYPE_DEFAULT;
 		calls[index]->isVoicePrivacy = 0;
 		calls[index]->number = strdup(number);
 		calls[index]->numberPresentation = (entry->number_length > 0) ? 0 : 2;
