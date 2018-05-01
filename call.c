@@ -293,7 +293,7 @@ int ipc_call_list(struct ipc_message *message)
 
 		calls[index] = (RIL_Call *) calloc(1, sizeof(RIL_Call));
 		calls[index]->state = ipc2ril_call_list_entry_state(entry->status);
-		calls[index]->index = entry->id;
+		calls[index]->index = (entry->id == 0) ? index + 1 : entry->id;
 		calls[index]->isMpty = entry->mpty;
 		calls[index]->isMT = entry->term == IPC_CALL_TERM_MT;
 		calls[index]->als = 0;
