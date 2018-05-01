@@ -81,13 +81,23 @@ unsigned char ril2ipc_sms_status(int status)
 int ipc_sms_send_msg(struct ipc_message *message)
 {
 	struct ipc_sms_send_msg_response_data *data;
+	struct ril_request *request;
 	RIL_SMS_Response response;
+	RIL_Token token;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_sms_send_msg_response_data))
 		return -1;
 
-	if (!ipc_seq_valid(message->aseq))
-		return 0;
+	if (!ipc_seq_valid(message->aseq)) {
+		// Some devices don't properly set the aseq here
+		request = ril_request_find_request_status(RIL_REQUEST_SEND_SMS, RIL_REQUEST_HANDLED);
+		if (request == NULL || request->token == NULL)
+			return 0;
+		else
+			token = request->token;
+	} else {
+		token = ipc_fmt_request_token(message->aseq);
+	}
 
 	data = (struct ipc_sms_send_msg_response_data *) message->data;
 
@@ -95,7 +105,7 @@ int ipc_sms_send_msg(struct ipc_message *message)
 	response.messageRef = data->id;
 	response.ackPDU = NULL;
 
-	ril_request_complete(ipc_fmt_request_token(message->aseq), ipc2ril_sms_ack_error(data->ack), &response, sizeof(response));
+	ril_request_complete(token, ipc2ril_sms_ack_error(data->ack), &response, sizeof(response));
 
 	return 0;
 }
@@ -500,19 +510,29 @@ complete:
 int ipc_sms_deliver_report(struct ipc_message *message)
 {
 	struct ipc_sms_deliver_report_response_data *data;
+	struct ril_request *request;
+	RIL_Token token;
 	RIL_Errno error;
 
 	if (message == NULL || message->data == NULL || message->size < sizeof(struct ipc_sms_deliver_report_response_data))
 		return -1;
 
-	if (!ipc_seq_valid(message->aseq))
-		return 0;
+	if (!ipc_seq_valid(message->aseq)) {
+		// Some devices don't properly set the aseq here
+		request = ril_request_find_request_status(RIL_REQUEST_SMS_ACKNOWLEDGE, RIL_REQUEST_HANDLED);
+		if (request == NULL || request->token == NULL)
+			return 0;
+		else
+			token = request->token;
+	} else {
+		token = ipc_fmt_request_token(message->aseq);
+	}
 
 	data = (struct ipc_sms_deliver_report_response_data *) message->data;
 
 	error = ipc2ril_sms_ack_error(data->ack);
 
-	ril_request_complete(ipc_fmt_request_token(message->aseq), error, NULL, 0);
+	ril_request_complete(token, error, NULL, 0);
 
 	return 0;
 }
