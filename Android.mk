@@ -36,7 +36,6 @@ LOCAL_SRC_FILES := \
 	ss.c \
 	oem.c \
 	data.c \
-	rfs.c \
 	gen.c
 
 LOCAL_C_INCLUDES := \

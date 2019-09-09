@@ -944,29 +944,20 @@ complete:
 
 int ipc_rfs_dispatch(struct ril_client *client, struct ipc_message *message)
 {
+	struct ipc_rfs_data *data;
 	unsigned int i;
 	int rc;
 
-	if (client == NULL || message == NULL || ril_data == NULL)
+	if (client == NULL || client->data == NULL || message == NULL || ril_data == NULL)
 		return -1;
+
+	data = (struct ipc_rfs_data *) client->data;
 
 	RIL_LOCK();
 
-	for (i = 0; i < ipc_rfs_dispatch_handlers_count; i++) {
-		if (ipc_rfs_dispatch_handlers[i].handler == NULL)
-			continue;
-
-		if (ipc_rfs_dispatch_handlers[i].command == message->command) {
-			rc = ipc_rfs_dispatch_handlers[i].handler(message);
-			if (rc < 0)
-				goto error;
-
-			rc = 0;
-			goto complete;
-		}
-	}
-
-	RIL_LOGD("Unhandled %s message: %s", client->name, ipc_command_string(message->command));
+	rc = ipc_rfs_handle_msg(data->ipc_client, message);
+	if (rc < 0)
+		goto error;
 
 	rc = 0;
 	goto complete;

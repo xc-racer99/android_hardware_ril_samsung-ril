@@ -119,8 +119,6 @@ extern unsigned int ril_clients_count;
 
 extern struct ipc_dispatch_handler ipc_fmt_dispatch_handlers[];
 extern unsigned int ipc_fmt_dispatch_handlers_count;
-extern struct ipc_dispatch_handler ipc_rfs_dispatch_handlers[];
-extern unsigned int ipc_rfs_dispatch_handlers_count;
 extern struct srs_dispatch_handler srs_dispatch_handlers[];
 extern unsigned int srs_dispatch_handlers_count;
 
@@ -432,16 +430,6 @@ int ipc_gprs_hsdpa_status(struct ipc_message *message);
 int ipc_gprs_call_status(struct ipc_message *message);
 int ril_request_last_data_call_fail_cause(void *data, size_t size,
 	RIL_Token token);
-
-/*
- * RFS
- */
-
-int ipc_rfs_nv_read_item(struct ipc_message *message);
-int ipc_rfs_nv_write_item(struct ipc_message *message);
-int ipc_rfs_file_info(struct ipc_message *message);
-int ipc_rfs_generic_io(struct ipc_message *message);
-int ipc_rfs_read_dir(struct ipc_message *message);
 
 /*
  * GEN
